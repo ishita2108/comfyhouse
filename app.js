@@ -25,10 +25,10 @@ class Products{
 
         let products = data.items;
         products = products.map(item =>{
-        const {title,price} = item.fields;
+        const {title,price,available} = item.fields;
         const {id} = item.sys;
         const image = item.fields.image.fields.file.url;
-        return{title,price,id,image}
+        return{title,price,available,id,image}
         })
         return(products)
        }
@@ -81,6 +81,8 @@ class UI {
                 cart = [...cart, cartItem];
                 console.log(cart)
                 // save cart in local storage
+                let tempItem = cart.find(item => item.id === id);
+                tempItem.available = tempItem.available - 1;
                 Storage.saveCart(cart);
                 // set cart values
                 this.setCartValues(cart);
@@ -101,6 +103,7 @@ class UI {
         });
         cartTotal.innerText = parseFloat(tempTotal.toFixed(2));
         cartItems.innerText = itemsTotal;
+
         // console.log(cartTotal);
         // console.log(cartItems);
     }
@@ -112,9 +115,12 @@ class UI {
                 <div>
                     <h4>${item.title}</h4>
                     <h5>$${item.price}</h5>
+                    
                     <span class="remove-item" data-id=${item.id}>remove</span>
                 </div>
             <div>
+                <h5>Pieces Left: </h5>
+                <p class="item-amount">${item.available}</p>
                 <i class="fas fa-chevron-up" data-id=${item.id}></i>
                 <p class="item-amount">${item.amount}</p>
                 <i class="fas fa-chevron-down" data-id=${item.id}></i>
@@ -159,12 +165,20 @@ class UI {
                 else if(event.target.classList.contains('fa-chevron-up')){
                     let addAmount = event.target;
                     let id = addAmount.dataset.id;
-                    // console.log(addAmount)
+                     // console.log(addAmount)
                     let tempItem = cart.find(item => item.id === id);
-                    tempItem.amount = tempItem.amount+1;
-                    Storage.saveCart(cart);
-                    this.setCartValues(cart);
-                    addAmount.nextElementSibling.innerHTML = tempItem.amount;
+                    tempItem.amount = tempItem.amount + 1 ;
+                    tempItem.available = tempItem.available - 1;
+                    console.log(tempItem.available, tempItem.amount)
+                    if (tempItem.available>=0){
+                        Storage.saveCart(cart);
+                        this.setCartValues(cart);
+                        addAmount.nextElementSibling.innerHTML = tempItem.amount;
+                        addAmount.previousElementSibling.innerText = tempItem.available;
+                    }
+                    else{
+                        alert("Out Of Stock")
+                    }
                 }
                 else if(event.target.classList.contains('fa-chevron-down')){
                     let lowerAmount = event.target;
@@ -172,10 +186,12 @@ class UI {
                     // console.log(addAmount)
                     let tempItem = cart.find(item => item.id === id);
                     tempItem.amount = tempItem.amount - 1;
-                    if(tempItem.amount>0){
+                    tempItem.available = tempItem.available +1;
+                    if(tempItem.amount > 0){
                         Storage.saveCart(cart);
                         this.setCartValues(cart);
                         lowerAmount.previousElementSibling.innerText = tempItem.amount;
+                        lowerAmount.previousElementSibling.previousElementSibling.previousElementSibling.innerText = tempItem.available;
                     }
                     else{
                         cartContent.removeChild(lowerAmount.parentElement.parentElement);
